@@ -4,14 +4,15 @@ import { fetchPythEquityBenchmark } from "@/lib/pyth";
 export const dynamic = "force-dynamic";
 
 // Pyth benchmark is optional - focus on PreStocks & Tessera data instead
-// If Pyth API is unavailable (401, rate-limited, etc), gracefully skip it
+// Pyth API may require authentication or have rate limiting
 const BENCHMARK_SYMBOLS = ["AAPL", "TSLA", "NVDA"];
 
 export async function GET() {
   try {
     const results = await Promise.all(
       BENCHMARK_SYMBOLS.map((s) => 
-        fetchPythEquityBenchmark(s).catch(() => null)
+        fetchPythEquityBenchmark(s)
+          .catch(() => null)
       )
     );
     
@@ -21,12 +22,16 @@ export async function GET() {
     return NextResponse.json({ 
       results: validResults,
       fetchedAt: new Date().toISOString(),
-      note: "Pyth benchmark data may be unavailable. Dashboard focuses on PreStocks & Tessera data."
+      note: "Pyth benchmark data requires special access. Dashboard prioritizes real PreStocks & Tessera data."
     });
   } catch (err) {
     // Silently fail - Pyth is optional
     return NextResponse.json(
-      { results: [], fetchedAt: new Date().toISOString() },
+      { 
+        results: [], 
+        fetchedAt: new Date().toISOString(),
+        note: "Pyth benchmark currently unavailable"
+      },
       { status: 200 }
     );
   }

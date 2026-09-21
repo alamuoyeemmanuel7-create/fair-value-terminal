@@ -1,6 +1,10 @@
 import { PythEquityComparison } from "./types";
 
-const HERMES_URL = "https://hermes.pyth.network";
+// Try multiple Hermes endpoints in case one is rate-limited
+const HERMES_URLS = [
+  "https://hermes.pyth.network",
+  "https://hermes-beta.pyth.network",
+];
 
 interface FeedMeta {
   id: string;
@@ -13,27 +17,56 @@ interface PriceUpdate {
 }
 
 async function findFeeds(query: string): Promise<FeedMeta[]> {
-  const res = await fetch(
-    `${HERMES_URL}/v2/price_feeds?query=${encodeURIComponent(query)}`,
-    { next: { revalidate: 60 } }
-  );
-  if (!res.ok) throw new Error(`Pyth feed search failed: ${res.status}`);
-  return res.json();
+  for (const url of HERMES_URLS) {
+    try {
+      const res = await fetch(
+        `${url}/v2/price_feeds?query=${encodeURIComponent(query)}`,
+        { next: { revalidate: 60 } }
+      );
+      if (res.ok) return res.json();
+      if (res.status !== 401) continue;
+    } catch {
+      continue;
+    }
+  }
+  throw new Error(`Pyth feed search failed on all endpoints`);
 }
 
 async function latestPrices(ids: string[]): Promise<Map<string, number>> {
   if (ids.length === 0) return new Map();
+  
   const params = ids.map((id) => `ids[]=${id}`).join("&");
-  const res = await fetch(`${HERMES_URL}/v2/updates/price/latest?${params}`, {
-    next: { revalidate: 15 },
-  });
-  if (!res.ok) throw new Error(`Pyth price fetch failed: ${res.status}`);
-  const json = await res.json();
-  const out = new Map<string, number>();
-  for (const p of json.parsed as PriceUpdate[]) {
-    out.set(p.id, Number(p.price.price) * Math.pow(10, p.price.expo));
+  
+  for (const url of HERMES_URLS) {
+    try {
+      const res = await fetch(`${url}/v2/updates/price/latest?${params}`, {
+        next: { revalidate: 15 },
+      });
+      
+      if (!res.ok) {
+        console.warn(`[Pyth] Endpoint ${url} returned ${res.status}`);
+        continue;
+      }
+      
+      const json = await res.json();
+      const out = new Map<string, number>();
+      
+      if (!json.parsed) {
+        console.warn(`[Pyth] No price data in response from ${url}`);
+        continue;
+      }
+      
+      for (const p of json.parsed as PriceUpdate[]) {
+        out.set(p.id, Number(p.price.price) * Math.pow(10, p.price.expo));
+      }
+      return out;
+    } catch (e) {
+      console.warn(`[Pyth] Error fetching from ${url}:`, e);
+      continue;
+    }
   }
-  return out;
+  
+  throw new Error(`Pyth price fetch failed on all endpoints`);
 }
 
 /**
