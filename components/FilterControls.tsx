@@ -198,7 +198,7 @@ export function FilterControls({
                   className="preset-delete"
                   title="Delete"
                 >
-                  ✕
+                  &times;
                 </button>
               </div>
             ))}
