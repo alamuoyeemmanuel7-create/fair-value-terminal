@@ -8,9 +8,6 @@ import {
 import { WalletModalProvider } from "@solana/wallet-adapter-react-ui";
 import {
   PhantomWalletAdapter,
-  SolflareWalletAdapter,
-  LedgerWalletAdapter,
-  TorusWalletAdapter,
 } from "@solana/wallet-adapter-wallets";
 import { clusterApiUrl } from "@solana/web3.js";
 
@@ -23,24 +20,27 @@ export function AppWalletProvider({ children }: { children: React.ReactNode }) {
     return url;
   }, []);
   
+  // Use only Phantom - it's the most reliable and widely supported
+  // Other wallets require browser extensions/setup that may not be available
   const wallets = useMemo(() => {
     try {
-      const walletList = [
-        new PhantomWalletAdapter(),
-        new SolflareWalletAdapter(),
-        new LedgerWalletAdapter(),
-        new TorusWalletAdapter(),
-      ];
-      console.log("[Wallet] Initialized", walletList.length, "wallet adapters");
-      return walletList;
+      const phantomWallet = new PhantomWalletAdapter();
+      console.log("[Wallet] Using Phantom wallet adapter");
+      return [phantomWallet];
     } catch (error) {
-      console.error("[Wallet] Error initializing wallets:", error);
-      return [new PhantomWalletAdapter()];
+      console.error("[Wallet] Error initializing Phantom:", error);
+      return [];
     }
   }, []);
 
   const onError = useCallback((error: any) => {
     const message = error?.message || String(error);
+    
+    // Suppress expected user rejection errors
+    if (message?.includes("User rejected")) {
+      return;
+    }
+    
     console.error("[Wallet] Connection error:", message);
   }, []);
 
