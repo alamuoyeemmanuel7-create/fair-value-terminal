@@ -13,13 +13,26 @@ const BENCHMARK_SYMBOLS = ["AAPL", "TSLA", "NVDA"];
 export async function GET() {
   try {
     const results = await Promise.all(
-      BENCHMARK_SYMBOLS.map((s) => fetchPythEquityBenchmark(s))
+      BENCHMARK_SYMBOLS.map((s) => 
+        fetchPythEquityBenchmark(s).catch((err) => {
+          console.warn(`Pyth benchmark for ${s} failed:`, err.message);
+          return {
+            symbol: s,
+            equityPrice: null,
+            xStockPrice: null,
+            ondoPrice: null,
+            spreadPct: null,
+            error: err.message,
+          };
+        })
+      )
     );
     return NextResponse.json({ results, fetchedAt: new Date().toISOString() });
   } catch (err) {
+    console.error("Pyth benchmark API error:", err);
     return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Unknown error" },
-      { status: 502 }
+      { error: err instanceof Error ? err.message : "Unknown error", results: [] },
+      { status: 200 } // Return 200 but with empty results instead of 502
     );
   }
 }
