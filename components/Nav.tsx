@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import dynamic from "next/dynamic";
 import { Suspense } from "react";
+import { WalletStatus } from "./WalletStatus";
 
 const WalletMultiButton = dynamic(
   () => import("@solana/wallet-adapter-react-ui").then((mod) => mod.WalletMultiButton),
@@ -25,9 +26,12 @@ export default function Nav() {
         {link("/basket", "Basket")}
         {link("/trade", "Trade")}
       </nav>
-      <Suspense fallback={<div style={{ width: 150, height: 40 }} />}>
-        <WalletMultiButton style={{ fontFamily: "var(--sans)", fontSize: 13 }} />
-      </Suspense>
+      <div style={{ display: "flex", flexDirection: "column", alignItems: "flex-end", gap: 8 }}>
+        <Suspense fallback={<div style={{ width: 150, height: 40 }} />}>
+          <WalletMultiButton style={{ fontFamily: "var(--sans)", fontSize: 13 }} />
+        </Suspense>
+        <WalletStatus />
+      </div>
     </div>
   );
 }

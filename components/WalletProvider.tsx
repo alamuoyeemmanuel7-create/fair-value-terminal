@@ -20,28 +20,46 @@ export function AppWalletProvider({ children }: { children: React.ReactNode }) {
     return url;
   }, []);
   
-  // Use only Phantom - it's the most reliable and widely supported
-  // Other wallets require browser extensions/setup that may not be available
+  // Initialize Phantom wallet with proper error handling
   const wallets = useMemo(() => {
     try {
+      // Create adapter but don't validate ready state yet
+      // The wallet adapter will handle detection internally
       const phantomWallet = new PhantomWalletAdapter();
-      console.log("[Wallet] Using Phantom wallet adapter");
+      console.log("[Wallet] Phantom adapter created");
+      
+      // Log ready state if available
+      try {
+        const readyState = phantomWallet.readyState;
+        console.log("[Wallet] Phantom readyState:", readyState);
+      } catch (e) {
+        console.log("[Wallet] Could not determine Phantom readyState");
+      }
+      
       return [phantomWallet];
     } catch (error) {
-      console.error("[Wallet] Error initializing Phantom:", error);
+      console.error("[Wallet] Error creating Phantom adapter:", error);
       return [];
     }
   }, []);
 
   const onError = useCallback((error: any) => {
     const message = error?.message || String(error);
+    const name = error?.name || "Unknown";
     
-    // Suppress expected user rejection errors
-    if (message?.includes("User rejected")) {
+    // Log all wallet errors for debugging
+    console.log("[Wallet] Error event:", { name, message });
+    
+    // Only suppress specific expected errors
+    if (name === "WalletNotFoundError" || message?.includes("not found")) {
+      console.log("[Wallet] Phantom wallet not found - install browser extension");
       return;
     }
     
-    console.error("[Wallet] Connection error:", message);
+    if (message?.includes("User rejected")) {
+      console.log("[Wallet] User rejected connection");
+      return;
+    }
   }, []);
 
   return (
