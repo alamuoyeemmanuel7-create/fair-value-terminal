@@ -232,7 +232,13 @@ export default function Dashboard() {
 
         {pyth?.error && <div className="err">{pyth.error}</div>}
 
-        {pyth && !pyth.error && (
+        {!pyth || (pyth.results && pyth.results.length === 0) ? (
+          <div className="status">
+            Pyth benchmark data currently unavailable. The dashboard focuses on real data from PreStocks and Tessera.
+          </div>
+        ) : null}
+
+        {pyth && pyth.results && pyth.results.length > 0 && (
           <div>
             <div className="row head">
               <div>Symbol</div>
