@@ -44,61 +44,66 @@ export default function Dashboard() {
 
   async function load() {
     setLoading(true);
-    const [d, p] = await Promise.all([
-      fetch("/api/dashboard").then((r) => r.json()),
-      fetch("/api/pyth-benchmark").then((r) => r.json()),
-    ]);
-    setData(d);
-    setPyth(p);
+    try {
+      const [d, p] = await Promise.all([
+        fetch("/api/dashboard").then((r) => r.json()),
+        fetch("/api/pyth-benchmark").then((r) => r.json()).catch(() => ({ results: [], error: "Pyth API failed" })),
+      ]);
+      setData(d);
+      setPyth(p);
 
-    // Record spreads in history
-    if (d.comparisons) {
-      for (const comp of d.comparisons) {
-        spreadHistory.recordSpread(comp.company, comp.spreadPct, comp.spreadBasis);
-      }
+      // Record spreads in history
+      if (d.comparisons) {
+        for (const comp of d.comparisons) {
+          spreadHistory.recordSpread(comp.company, comp.spreadPct, comp.spreadBasis);
+        }
 
-      // Calculate trends
-      const newTrends = new Map<string, SpreadTrend>();
-      const newSparklines = new Map<string, number[]>();
-      for (const comp of d.comparisons) {
-        const trend = spreadHistory.calculateTrend(comp.company);
-        if (trend) {
-          newTrends.set(comp.company, trend);
-          newSparklines.set(comp.company, spreadHistory.getSparklineData(comp.company));
+        // Calculate trends
+        const newTrends = new Map<string, SpreadTrend>();
+        const newSparklines = new Map<string, number[]>();
+        for (const comp of d.comparisons) {
+          const trend = spreadHistory.calculateTrend(comp.company);
+          if (trend) {
+            newTrends.set(comp.company, trend);
+            newSparklines.set(comp.company, spreadHistory.getSparklineData(comp.company));
+          }
+        }
+        setTrends(newTrends);
+        setSparklineData(newSparklines);
+        // Apply filters and sorting
+        const filtered = applyFilters(d.comparisons, filters, newTrends);
+        setFilteredComparisons(filtered);
+
+        // Detect arbitrage opportunities
+        const opportunities = detectOpportunities(d.comparisons);
+        setArbitrage(opportunities);
+
+        // Check alerts
+        for (const comp of d.comparisons) {
+          const alert = alertManager.checkSpreadAlert(comp.company, comp.spreadPct);
+          if (alert) {
+            sendNotification("Fair Value Alert", {
+              body: alert.message,
+              tag: alert.ruleId,
+              icon: "/solana-icon.png",
+            });
+          }
+        }
+
+        for (const opp of opportunities) {
+          const alert = alertManager.checkOpportunityAlert(opp.company, opp.estimatedProfit);
+          if (alert) {
+            sendNotification("Arbitrage Opportunity!", {
+              body: alert.message,
+              tag: alert.ruleId,
+              icon: "/solana-icon.png",
+            });
+          }
         }
       }
-      setTrends(newTrends);
-      setSparklineData(newSparklines);
-      // Apply filters and sorting
-      const filtered = applyFilters(d.comparisons, filters, newTrends);
-      setFilteredComparisons(filtered);
-
-      // Detect arbitrage opportunities
-      const opportunities = detectOpportunities(d.comparisons);
-      setArbitrage(opportunities);
-
-      // Check alerts
-      for (const comp of d.comparisons) {
-        const alert = alertManager.checkSpreadAlert(comp.company, comp.spreadPct);
-        if (alert) {
-          sendNotification("Fair Value Alert", {
-            body: alert.message,
-            tag: alert.ruleId,
-            icon: "/solana-icon.png",
-          });
-        }
-      }
-
-      for (const opp of opportunities) {
-        const alert = alertManager.checkOpportunityAlert(opp.company, opp.estimatedProfit);
-        if (alert) {
-          sendNotification("Arbitrage Opportunity!", {
-            body: alert.message,
-            tag: alert.ruleId,
-            icon: "/solana-icon.png",
-          });
-        }
-      }
+    } catch (err) {
+      console.error("Failed to load data:", err);
+      setData({ error: err instanceof Error ? err.message : "Failed to fetch data", comparisons: [], fetchedAt: new Date().toISOString() });
     }
 
     setLoading(false);
