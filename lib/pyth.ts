@@ -27,10 +27,7 @@ async function latestPrices(ids: string[]): Promise<Map<string, number>> {
   const res = await fetch(`${HERMES_URL}/v2/updates/price/latest?${params}`, {
     next: { revalidate: 15 },
   });
-  if (!res.ok) {
-    console.error(`Pyth price fetch failed with status ${res.status}:`, await res.text());
-    throw new Error(`Pyth price fetch failed: ${res.status}`);
-  }
+  if (!res.ok) throw new Error(`Pyth price fetch failed: ${res.status}`);
   const json = await res.json();
   const out = new Map<string, number>();
   for (const p of json.parsed as PriceUpdate[]) {
