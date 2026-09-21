@@ -20,6 +20,7 @@ export async function GET() {
       fetchedAt: new Date().toISOString(),
     });
   } catch (err) {
+    console.error("Dashboard API error:", err);
     return NextResponse.json(
       { error: err instanceof Error ? err.message : "Unknown error" },
       { status: 502 }
