@@ -21,6 +21,7 @@ export function AppWalletProvider({ children }: { children: React.ReactNode }) {
     () => process.env.NEXT_PUBLIC_RPC_URL || clusterApiUrl("mainnet-beta"),
     []
   );
+  
   const wallets = useMemo(
     () => [
       new PhantomWalletAdapter(),
@@ -33,7 +34,13 @@ export function AppWalletProvider({ children }: { children: React.ReactNode }) {
 
   return (
     <ConnectionProvider endpoint={endpoint}>
-      <WalletProvider wallets={wallets} autoConnect>
+      <WalletProvider 
+        wallets={wallets} 
+        autoConnect={false}
+        onError={(error) => {
+          console.warn("Wallet error:", error.message);
+        }}
+      >
         <WalletModalProvider>{children}</WalletModalProvider>
       </WalletProvider>
     </ConnectionProvider>

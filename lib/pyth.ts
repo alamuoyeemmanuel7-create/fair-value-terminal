@@ -49,15 +49,24 @@ export async function fetchPythEquityBenchmark(
 ): Promise<PythEquityComparison> {
   const feeds = await findFeeds(symbol);
 
+  // Find equity feed - look for exact "Equity" or "Equity.Index" type
   const equity = feeds.find(
-    (f) => f.attributes.asset_type?.toLowerCase() === "equity"
+    (f) => 
+      f.attributes.asset_type?.toLowerCase() === "equity" ||
+      f.attributes.symbol?.toLowerCase().startsWith("equity.")
   );
-  const xstock = feeds.find((f) =>
-    f.attributes.symbol?.toUpperCase().includes(`${symbol.toUpperCase()}X`)
-  );
-  const ondo = feeds.find((f) =>
-    f.attributes.symbol?.toUpperCase().includes(`${symbol.toUpperCase()}ON`)
-  );
+  
+  // Find xStock feed (tokenized wrapper, e.g., AAPLX)
+  const xstock = feeds.find((f) => {
+    const sym = f.attributes.symbol?.toUpperCase() || "";
+    return sym.includes(`${symbol.toUpperCase()}X`) && sym.includes("CRYPTO");
+  });
+  
+  // Find Ondo feed (tokenized stock, e.g., AAPLON)
+  const ondo = feeds.find((f) => {
+    const sym = f.attributes.symbol?.toUpperCase() || "";
+    return sym.includes(`${symbol.toUpperCase()}ON`) && sym.includes("CRYPTO");
+  });
 
   const ids = [equity?.id, xstock?.id, ondo?.id].filter(Boolean) as string[];
   const prices = await latestPrices(ids);
