@@ -1,7 +1,7 @@
 "use client";
 
 import { useWallet } from "@solana/wallet-adapter-react";
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 
 export function CustomWalletButton() {
   const { 
@@ -13,6 +13,11 @@ export function CustomWalletButton() {
     select
   } = useWallet();
   const [showMenu, setShowMenu] = useState(false);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   const handleConnect = useCallback(async () => {
     if (!wallets || wallets.length === 0) {
@@ -21,7 +26,6 @@ export function CustomWalletButton() {
     }
 
     try {
-      // Try to select the first available wallet
       if (wallets.length > 0) {
         select(wallets[0].adapter.name);
       }
@@ -38,6 +42,27 @@ export function CustomWalletButton() {
       console.error("Failed to disconnect wallet:", error);
     }
   }, [disconnect]);
+
+  // Use a placeholder on server to avoid hydration mismatch
+  if (!mounted) {
+    return (
+      <div
+        style={{
+          fontFamily: "var(--sans)",
+          fontSize: 13,
+          padding: "9px 16px",
+          border: "1px solid #f2b84b",
+          background: "transparent",
+          color: "#f2b84b",
+          borderRadius: "4px",
+          minWidth: 120,
+          opacity: 0.5,
+        }}
+      >
+        Loading...
+      </div>
+    );
+  }
 
   if (connected && publicKey) {
     return (

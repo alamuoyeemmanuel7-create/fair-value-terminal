@@ -4,14 +4,17 @@ import { useWallet } from "@solana/wallet-adapter-react";
 import { useEffect, useState } from "react";
 
 export function WalletStatus() {
-  const { connected, publicKey, wallet, wallets, connecting } = useWallet();
-  const [phantomInstalled, setPhantomInstalled] = useState(true);
+  const { connected, publicKey, wallets, connecting } = useWallet();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    // Check if any wallets are available
-    const hasWallets = wallets && wallets.length > 0;
-    setPhantomInstalled(hasWallets);
-  }, [wallets]);
+    setMounted(true);
+  }, []);
+
+  // Don't render anything on server to avoid hydration mismatch
+  if (!mounted) {
+    return null;
+  }
 
   // Show connecting state
   if (connecting) {
@@ -32,18 +35,10 @@ export function WalletStatus() {
   }
 
   // Show helpful message if no wallets available
-  if (!phantomInstalled || !wallets || wallets.length === 0) {
+  if (!wallets || wallets.length === 0) {
     return (
       <div style={{ fontSize: 12, color: "#ff6a55" }}>
-        No wallet detected.{" "}
-        <a
-          href="https://phantom.app"
-          target="_blank"
-          rel="noopener noreferrer"
-          style={{ color: "#f2b84b", textDecoration: "underline" }}
-        >
-          Install Phantom
-        </a>
+        No wallet detected
       </div>
     );
   }
