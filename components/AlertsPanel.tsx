@@ -150,7 +150,7 @@ export function AlertsPanel({ companies }: { companies: string[] }) {
                   onClick={() => handleDeleteRule(rule.id)}
                   title="Delete"
                 >
-                  ✕
+                  &times;
                 </button>
               </div>
             </div>

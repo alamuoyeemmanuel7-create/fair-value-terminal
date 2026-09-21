@@ -102,7 +102,7 @@ export function ExecutionPanel({
       <div className="execution-header">
         <h3>Execute {opportunity.company}</h3>
         <button className="close-btn" onClick={onClose}>
-          ✕
+          &times;
         </button>
       </div>
 
@@ -112,7 +112,7 @@ export function ExecutionPanel({
             <strong>Buy on {opportunity.buyPlatform}</strong>
             <span className="price">${opportunity.buyPrice.toFixed(2)}</span>
           </div>
-          <div className="flow-arrow">↓</div>
+          <div className="flow-arrow">v</div>
         </div>
 
         <div className="flow-step">
@@ -126,7 +126,7 @@ export function ExecutionPanel({
             )}
             {error && <span className="error">{error}</span>}
           </div>
-          <div className="flow-arrow">↓</div>
+          <div className="flow-arrow">v</div>
         </div>
 
         <div className="flow-step">
