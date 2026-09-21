@@ -23,10 +23,9 @@ export function AppWalletProvider({ children }: { children: React.ReactNode }) {
   const wallets = useMemo(() => {
     console.log("[Wallet] Initializing wallet adapters");
     try {
-      // Create Phantom adapter - will auto-detect if installed
       return [new PhantomWalletAdapter()];
     } catch (error) {
-      console.error("[Wallet] Failed to initialize:", error);
+      console.error("[Wallet] Error creating Phantom adapter:", error);
       return [];
     }
   }, []);
@@ -34,10 +33,12 @@ export function AppWalletProvider({ children }: { children: React.ReactNode }) {
   const onError = useCallback((error: any) => {
     const msg = error?.message || String(error);
     
-    // Only log unexpected errors - suppress expected ones
-    if (!msg.includes("User rejected") && !msg.includes("not found")) {
-      console.warn("[Wallet] Error:", msg);
+    // Suppress common expected errors
+    if (msg.includes("User rejected") || msg.includes("not found")) {
+      return;
     }
+    
+    console.warn("[Wallet] Error:", msg);
   }, []);
 
   return (

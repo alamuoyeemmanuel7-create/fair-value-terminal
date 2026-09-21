@@ -10,27 +10,35 @@ export function CustomWalletButton() {
     disconnect, 
     connecting, 
     wallets,
-    select
+    select,
+    wallet
   } = useWallet();
   const [showMenu, setShowMenu] = useState(false);
   const [mounted, setMounted] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     setMounted(true);
-  }, []);
+    console.log("[CustomWalletButton] Mounted. Available wallets:", wallets?.map(w => w.adapter.name));
+  }, [wallets]);
 
   const handleConnect = useCallback(async () => {
+    setError(null);
+    
     if (!wallets || wallets.length === 0) {
+      console.log("[CustomWalletButton] No wallets found, opening Phantom download");
       window.open("https://phantom.app", "_blank");
       return;
     }
 
     try {
-      if (wallets.length > 0) {
-        select(wallets[0].adapter.name);
-      }
+      console.log("[CustomWalletButton] Attempting to connect to:", wallets[0].adapter.name);
+      await select(wallets[0].adapter.name);
+      console.log("[CustomWalletButton] Wallet selected successfully");
     } catch (error) {
-      console.error("Failed to connect wallet:", error);
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error("[CustomWalletButton] Connection failed:", msg);
+      setError(msg);
     }
   }, [wallets, select]);
 
@@ -38,8 +46,11 @@ export function CustomWalletButton() {
     try {
       await disconnect();
       setShowMenu(false);
+      setError(null);
     } catch (error) {
-      console.error("Failed to disconnect wallet:", error);
+      const msg = error instanceof Error ? error.message : String(error);
+      console.error("[CustomWalletButton] Disconnect failed:", msg);
+      setError(msg);
     }
   }, [disconnect]);
 
@@ -73,9 +84,9 @@ export function CustomWalletButton() {
             fontFamily: "var(--sans)",
             fontSize: 13,
             padding: "9px 16px",
-            border: "1px solid #f2b84b",
+            border: "1px solid #3ddc84",
             background: "transparent",
-            color: "#f2b84b",
+            color: "#3ddc84",
             cursor: "pointer",
             borderRadius: "4px",
           }}
@@ -118,22 +129,34 @@ export function CustomWalletButton() {
   }
 
   return (
-    <button
-      onClick={handleConnect}
-      disabled={connecting}
-      style={{
-        fontFamily: "var(--sans)",
-        fontSize: 13,
-        padding: "9px 16px",
-        border: "1px solid #f2b84b",
-        background: connecting ? "#f2b84b" : "transparent",
-        color: connecting ? "#0a0e0f" : "#f2b84b",
-        cursor: connecting ? "not-allowed" : "pointer",
-        borderRadius: "4px",
-        opacity: connecting ? 0.7 : 1,
-      }}
-    >
-      {connecting ? "Connecting..." : "Connect Wallet"}
-    </button>
+    <div style={{ display: "flex", flexDirection: "column", gap: 4 }}>
+      <button
+        onClick={handleConnect}
+        disabled={connecting}
+        style={{
+          fontFamily: "var(--sans)",
+          fontSize: 13,
+          padding: "9px 16px",
+          border: "1px solid #f2b84b",
+          background: connecting ? "#f2b84b" : "transparent",
+          color: connecting ? "#0a0e0f" : "#f2b84b",
+          cursor: connecting ? "not-allowed" : "pointer",
+          borderRadius: "4px",
+          opacity: connecting ? 0.7 : 1,
+        }}
+      >
+        {connecting ? "Connecting..." : "Connect Wallet"}
+      </button>
+      {error && (
+        <div style={{ fontSize: 11, color: "#ff6a55" }}>
+          Error: {error}
+        </div>
+      )}
+      {wallets && wallets.length === 0 && (
+        <div style={{ fontSize: 11, color: "#8b9694" }}>
+          No wallet detected. Install Phantom.
+        </div>
+      )}
+    </div>
   );
 }
