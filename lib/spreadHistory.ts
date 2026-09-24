@@ -3,6 +3,8 @@
  * Tracks historical spread data with timestamps for trending analysis
  */
 
+import { SpreadTrend } from "./types";
+
 export interface SpreadSnapshot {
   company: string;
   spreadPct: number;
@@ -83,7 +85,7 @@ class SpreadHistoryManager {
   /**
    * Calculate trend data
    */
-  calculateTrend(company: string) {
+  calculateTrend(company: string): SpreadTrend | null {
     const now24h = this.getHistoryWindow(company, 1440);
     const now7d = this.getHistoryWindow(company, 10080);
     const now1h = this.getHistoryWindow(company, 60);
@@ -106,6 +108,8 @@ class SpreadHistoryManager {
       ? now1h[now1h.length - 1].spreadPct - now1h[0].spreadPct
       : 0;
 
+    const direction: "up" | "down" | "stable" = change24h > 0 ? "up" : change24h < 0 ? "down" : "stable";
+
     return {
       current: current.spreadPct,
       avg24h,
@@ -114,7 +118,7 @@ class SpreadHistoryManager {
       min24h,
       change24h,
       trend1h,
-      direction: change24h > 0 ? "up" : change24h < 0 ? "down" : "stable",
+      direction,
     };
   }
 

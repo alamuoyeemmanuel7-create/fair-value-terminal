@@ -6,9 +6,13 @@ import { AlertRule, alertManager } from "@/lib/alerts";
 export function AlertsPanel({ companies }: { companies: string[] }) {
   const [rules, setRules] = useState<AlertRule[]>([]);
   const [showForm, setShowForm] = useState(false);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<{
+    company: string;
+    type: "spread_above" | "spread_below" | "opportunity";
+    threshold: number;
+  }>({
     company: companies[0] || "",
-    type: "spread_above" as const,
+    type: "spread_above",
     threshold: 10,
   });
 

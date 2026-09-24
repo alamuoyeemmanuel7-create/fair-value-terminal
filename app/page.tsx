@@ -16,6 +16,7 @@ import { spreadHistory } from "@/lib/spreadHistory";
 
 interface DashboardResponse {
   comparisons: CompanyComparison[];
+  assets: any[];
   fetchedAt: string;
   error?: string;
 }
@@ -103,7 +104,7 @@ export default function Dashboard() {
       }
     } catch (err) {
       console.error("Failed to load data:", err);
-      setData({ error: err instanceof Error ? err.message : "Failed to fetch data", comparisons: [], fetchedAt: new Date().toISOString() });
+      setData({ error: err instanceof Error ? err.message : "Failed to fetch data", comparisons: [], assets: [], fetchedAt: new Date().toISOString() });
     }
 
     setLoading(false);
