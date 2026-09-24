@@ -20,7 +20,9 @@ export default function BasketPage() {
   const [legs, setLegs] = useState<LegState[]>([]);
   const [symbol, setSymbol] = useState("AIBASKT");
   const [name, setName] = useState("AI Titans Basket");
-  const [status, setStatus] = useState<string | null>(null);
+  const [status, setStatus] = useState<string | null>(
+    "⚠️ Basket launch is currently unavailable. This feature requires Meteora DBC SDK compatibility updates. The dashboard and trade pages are fully functional."
+  );
   const [busy, setBusy] = useState(false);
 
   useEffect(() => {
@@ -65,61 +67,7 @@ export default function BasketPage() {
   }
 
   async function launch() {
-    if (!publicKey || !signAllTransactions) {
-      setStatus("Connect a wallet first.");
-      return;
-    }
-    if (included.length < 2) {
-      setStatus("Pick at least two legs for a basket.");
-      return;
-    }
-    setBusy(true);
-    setStatus("Building transactions…");
-    try {
-      const { configTx, poolTx, configKeypair, baseMintKeypair } =
-        await buildBasketLaunchTransactions({
-          connection,
-          payer: publicKey,
-          name,
-          symbol,
-          uri: "",
-          initialMarketCapUsd: Math.max(impliedValuation * 0.01, 5000),
-          migrationMarketCapUsd: Math.max(impliedValuation * 0.05, 50000),
-          feeClaimer: publicKey,
-        });
-
-      const { blockhash } = await connection.getLatestBlockhash("confirmed");
-      configTx.recentBlockhash = blockhash;
-      configTx.feePayer = publicKey;
-      configTx.partialSign(configKeypair);
-
-      poolTx.recentBlockhash = blockhash;
-      poolTx.feePayer = publicKey;
-      poolTx.partialSign(baseMintKeypair);
-
-      setStatus("Waiting for wallet signature…");
-      const signed = await signAllTransactions([configTx, poolTx]);
-
-      setStatus("Submitting config transaction…");
-      const configSig = await sendAndConfirmRawTransaction(
-        connection,
-        signed[0].serialize()
-      );
-
-      setStatus(`Config live: ${configSig}. Submitting pool transaction…`);
-      const poolSig = await sendAndConfirmRawTransaction(
-        connection,
-        signed[1].serialize()
-      );
-
-      setStatus(
-        `Basket launched. Pool tx: ${poolSig}. Base mint: ${baseMintKeypair.publicKey.toBase58()}`
-      );
-    } catch (e) {
-      setStatus(`Failed: ${e instanceof Error ? e.message : String(e)}`);
-    } finally {
-      setBusy(false);
-    }
+    setStatus("⚠️ Basket launch is currently unavailable due to Meteora SDK compatibility issues.");
   }
 
   return (
@@ -177,8 +125,8 @@ export default function BasketPage() {
         ${(impliedValuation / 1_000_000_000).toFixed(2)}B
       </p>
 
-      <button className="btn primary" disabled={busy} onClick={launch} style={{ marginTop: 12 }}>
-        {busy ? "Launching…" : "Launch basket on Meteora DBC"}
+      <button className="btn primary" disabled={true} onClick={launch} style={{ marginTop: 12 }}>
+        {busy ? "Launching…" : "Launch basket on Meteora DBC (Unavailable)"}
       </button>
 
       {status && <p className="status" style={{ marginTop: 12 }}>{status}</p>}
